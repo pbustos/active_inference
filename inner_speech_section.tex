@@ -1,0 +1,305 @@
+% =====================================================================================================
+% inner_speech_section.tex — Inner speech, mind-wandering and active inference
+%
+% DRAFT (2026-11-18). A proposal section: it describes an architecture that is NOT yet implemented,
+% grounded in the existing language_agent (robocomp/active_inference). Include from main.tex with
+%     \input{inner_speech_section}
+% and add inner_speech.bib as a second resource:  \addbibresource{inner_speech.bib}
+% All keys are new (none collides with the keys main.tex already cites).
+% Packages used: amsmath, amssymb, enumitem (already loaded by main.tex) and array, which main.tex does not
+% load yet: add \usepackage{array} to its preamble.
+% =====================================================================================================
+
+\section{Inner Speech as Epistemic Action}
+\label{sec:inner_speech}
+
+The robot described so far uses language in one direction only: a person speaks, and a language agent turns
+the request into commands for the controller, grounded in a textual digest of the belief graph. This section
+proposes to turn that capability inward. We argue that a language model embedded in an Active Inference
+architecture can play the role that inner speech plays in human cognition: a serial, compositional medium in
+which the agent poses questions to itself, generates hypotheses, rehearses plans and replays its past, and that
+this role follows naturally from the epistemic component of expected free energy. The proposal is stated
+together with the constraints that keep such a voice from becoming a source of confabulated belief, and with the
+experiments that would falsify it.
+
+\subsection{Motivation: language for thought before language for talk}
+\label{sec:inner_speech:motivation}
+
+Two traditions disagree on the origin of inner speech but agree on its function. On the internalist view,
+human language evolved first as an internal system for structuring thought, and its use for communication is a
+later externalisation \cite{berwick2016why}. On the developmental view, inner speech is social speech that the
+child gradually internalises, abbreviates and turns into a tool for self-regulation \cite{vygotsky1986thought}.
+Contemporary reviews treat inner speech as functionally involved in planning, problem solving, self-monitoring and
+the maintenance of goals in working memory \cite{aldersonday2015inner}, and language more generally as a
+cognitive technology that lets a learner manipulate discrete, recombinable tokens rather than raw percepts
+\cite{clark1998magic}.
+
+Large language models give a striking instance of the developmental route. They are trained exclusively on
+communicative text, yet producing intermediate reasoning in that same medium before answering --- chain-of-thought
+--- measurably improves their performance \cite{wei2022chain}. A system built for talk becomes better at thinking
+by talking to itself. Our language agent sits at the same point of its own development: it was built to converse
+with a person, and the question we ask is what it contributes once its speech is addressed to the robot itself.
+
+\subsection{Inner questions as epistemic actions}
+\label{sec:inner_speech:questions}
+
+In Active Inference, policies are scored by expected free energy, whose epistemic term rewards the expected
+reduction of uncertainty about hidden states \cite{friston2017process, parr2022active}. A question is the
+linguistic form of exactly this quantity: it names a hidden variable whose value is uncertain and whose resolution
+is expected to matter. We therefore model an inner question as a persistent object
+\begin{equation}
+    \mathcal{Q} = \big\langle\, e,\; \mathcal{H},\; q(h),\; \mathcal{P},\; b,\; s \,\big\rangle ,
+    \label{eq:inner_question}
+\end{equation}
+where $e$ is the triggering event (for example an obstacle no concept agent explains), $\mathcal{H}$ a finite set
+of named hypotheses (``a chair'', ``a box'', ``unknown''), $q(h)$ the current posterior over them, $\mathcal{P}$
+the set of pending predictions, $b$ a budget in time and motion, and $s \in \{\text{open},\text{resolved},
+\text{abandoned}\}$ its status. Questions form a stack in the sense of a \emph{question under discussion}
+\cite{roberts2012information}: ``is it a chair?'' is a sub-question whose answer partially resolves the parent
+``what is this?''. The question, not the language model's context window, carries the state of the reasoning from
+one step to the next.
+
+\paragraph{One step of the loop.}
+Given $\mathcal{Q}$, the language model proposes a test: an epistemic action $a$ (turn towards the anomaly,
+approach it, look with the front camera) together with the outcome each hypothesis predicts. The value of the test
+is its expected information gain minus its cost,
+\begin{equation}
+    V(a) \;=\; \underbrace{H\!\left[q(h)\right] \;-\; \mathbb{E}_{p(o \mid a)}\!\left[ H\!\left[q(h \mid o, a)\right]
+    \right]}_{I(h;\,o \mid a)} \;-\; c(a),
+    \label{eq:inner_value}
+\end{equation}
+which is the negative of the epistemic part of expected free energy with an explicit action cost. The test is
+executed only if $V(a) > 0$ and the action passes the same deterministic gate that already validates every
+command the language agent issues. When the observation $o$ arrives, the posterior is updated by the concept
+agents' own likelihoods,
+\begin{equation}
+    q(h \mid o, a) \;\propto\; p(o \mid h, a)\, q(h),
+    \label{eq:inner_update}
+\end{equation}
+and the loop continues, spawns a sub-question, or terminates when
+\begin{equation}
+    H\!\left[q(h)\right] < \eta \quad\lor\quad \max_a V(a) \le 0 \quad\lor\quad b \text{ exhausted}.
+    \label{eq:inner_stop}
+\end{equation}
+The stopping rule is what separates reasoning from rumination: a loop with no expected information to gain closes,
+possibly with the answer ``unknown'', and its trigger is habituated for a refractory period.
+
+\paragraph{The grounding constraint.}
+The central design rule is that \emph{the language model proposes and perception disposes}. Text produced by the
+model may introduce hypotheses, predictions and tests; it may never move a posterior. Only the likelihood
+$p(o \mid h, a)$ in \eqref{eq:inner_update}, computed by the perceptual agents from sensor data, does. This is the
+belief-side counterpart of the rule the language agent already enforces for actions, where every proposed command
+is validated in C++ against the belief graph before it reaches the controller. Without it, a self-addressed
+language loop is a closed system of text conditioned on text and converges on its own confabulations.
+
+\paragraph{The proposer as a calibrated prior.}
+The hypotheses the model names, and the probabilities it attaches to them, encode world knowledge the robot has
+not acquired by itself (``chairs come with tables''). We treat this as a prior whose weight is earned. Let
+$\pi_{\text{LM}}(h \mid x)$ be the proposer's distribution in context $x$ and $n_x(h)$ the robot's own counts of
+resolved questions in that context. The prior entering \eqref{eq:inner_update} is
+\begin{equation}
+    q_0(h \mid x) \;\propto\; \pi_{\text{LM}}(h \mid x)^{\beta_x}\, \big(\alpha + n_x(h)\big),
+    \label{eq:inner_prior}
+\end{equation}
+a tempered product of the proposer and a Dirichlet over experience, where $\beta_x \in [0,1]$ is set from the
+proposer's measured calibration in that context (for instance from its Brier score on past questions). Early in
+the robot's life the proposer dominates; as counts accumulate, the robot's own experience replaces borrowed
+knowledge. The same conjugate form already governs the language agent's decision to ask a person or to assume
+that they moved an object, where a Beta posterior over the person's past answers is compared against the costs of
+asking and of being wrong.
+
+\subsection{Attention, automaticity and the wandering mind}
+\label{sec:inner_speech:modes}
+
+A human driver on an easy road steers without attending to it; the mind is free to plan, imagine or recall, and is
+recaptured the instant something unexpected happens \cite{smallwood2015science, christoff2016mind}. In Active
+Inference this is a statement about precision: while prediction errors are small and the habitual policy is
+reliable, attention --- the precision assigned to sensory prediction errors --- can be withdrawn from the task; a
+surprise raises it again \cite{feldman2010attention}. The arbitration between habitual and deliberative control by
+their relative uncertainty \cite{daw2005uncertainty} has the same structure.
+
+The architecture already separates the two systems. The controller and the concept agents form an automatic layer
+that drives, avoids obstacles and executes missions without the language model; the language agent is the
+deliberative voice. We propose to make the allocation of the voice explicit through a scalar \emph{demand} signal,
+computed on every digest cycle without the language model,
+\begin{equation}
+    D_t \;=\; \sum_{k} \pi_k\, \varepsilon_{k,t}^{2} \;+\; \lambda\, \mathbb{1}\!\left[\text{person active}_t\right],
+    \label{eq:inner_demand}
+\end{equation}
+where $\varepsilon_{k,t}$ are normalised prediction errors reported by the agents (unexplained residual occupancy,
+flips of existence or door beliefs, localisation uncertainty, stalled or failed mission steps, controller refusals)
+and $\pi_k$ their precisions. Three modes follow from two thresholds with asymmetric hysteresis:
+\begin{equation}
+    m_t =
+    \begin{cases}
+        \textsc{focused}    & D_t > \theta_{\text{hi}},\\[2pt]
+        \textsc{wandering}  & D_\tau < \theta_{\text{lo}} \;\; \forall\, \tau \in [t - T, t],\\[2pt]
+        \textsc{monitoring} & \text{otherwise.}
+    \end{cases}
+    \label{eq:inner_modes}
+\end{equation}
+Entering \textsc{wandering} requires demand to stay low for a dwell time $T$; leaving it requires a single sample
+above $\theta_{\text{hi}}$. The robot is slow to drift off and instant to snap back. Safety never depends on this
+arbitration: the controller's reflexes act on their own, and the deliberative voice arrives after the reflex, as
+awareness follows braking in the driver.
+
+\paragraph{Focused mode} runs the question loop of Section~\ref{sec:inner_speech:questions} on the triggering
+event. \paragraph{Monitoring mode} makes no language-model calls; the voice is primed but silent.
+
+\paragraph{Wandering mode.}
+Freed from the task, the voice is seeded with one recent experience chosen by salience: an episode that ended
+unresolved, a failure, an object that changed, or an upcoming goal. Each step's output, together with an
+associative retrieval from episodic memory, seeds the next, so that the chain drifts as spontaneous thought does
+\cite{christoff2016mind}. The voice has access only to memory queries and to the architecture's imagination tools,
+which simulate observations and outcomes on a copy of the belief graph; it can neither act nor write beliefs. Its
+products are of three kinds: counterfactuals over past episodes (``had the door been open, the crossing would have
+taken 40\,s less''), hypotheses to be tested later, and prospective plans (``if the door is shut on the way back,
+the route through the next room is shorter''). Functionally this is the default network's role in simulating
+past and future \cite{buckner2008brain}, and the offline replay and model reduction that Active Inference assigns
+to rest and sleep \cite{friston2017curiosity, hobson2012waking}. Replay is prioritised by the expected gain of the
+memory it revisits \cite{mattar2018prioritized}.
+
+\paragraph{Source monitoring.}
+Humans occasionally misremember imagined events as perceived ones \cite{johnson1993source}. The robot must not.
+Everything produced while wandering is stored with an \emph{imagined} provenance, separate from the factual
+episodic record, and enters the learning loop only as a hypothesis to be tested, never as evidence.
+
+\subsection{What the return to reality gives the automatic layer}
+\label{sec:inner_speech:return}
+
+The transition from \textsc{wandering} to \textsc{focused} cancels the chain in flight (its state is kept, so that
+it may resume if demand subsides) and gives the full voice to the surprise. It serves the automatic layer at three
+timescales.
+\begin{enumerate}
+    \item \textbf{Decision.} A surprise means the automatic layer has left its domain of competence, where its only
+    responses are to retry, stop or fail. The voice adds re-interpretation of the scene, arbitration between goals,
+    re-planning through remembered topology, and recourse to a person.
+    \item \textbf{Attention.} The voice can raise precision where it matters: orienting sensors, increasing a
+    detector's rate in a region, or passing a hypothesis to the concept agents as a spatial prior. Such a prior has
+    bounded weight; it may accelerate the recognition of an object that is present but may not create one that is
+    not, preserving the grounding constraint.
+    \item \textbf{Teaching.} Each resolved surprise is a labelled example the automatic layer could not have
+    produced alone: a residual later identified as a chair is a false negative of the chair detector; a door that
+    is repeatedly shut in the evening becomes a prior; a recovery that repeatedly succeeds becomes a branch of the
+    controller's behaviour tree. The domain of competence grows, and the situations that require the voice become
+    rarer, which is the classical progression from effortful to autonomous skill \cite{fitts1967human}.
+\end{enumerate}
+Plans prepared while wandering act as a cache: when the anticipated situation occurs, the focused voice verifies a
+plan instead of composing one. The return ends with an explicit release --- spatial priors cleared, safety margins
+restored, the automatic layer confirmed back within its competence --- without which every surprise would leave
+the robot permanently vigilant.
+
+\subsection{Relation to chain-of-thought reasoning}
+\label{sec:inner_speech:cot}
+
+Chain-of-thought is inner speech in the functional sense, but of a specific kind, and the comparison sharpens the
+design (Table~\ref{tab:inner_cot}). Plain chain-of-thought is convergent and ungrounded: tokens condition on
+tokens until an answer is produced, and the trace is discarded. Interleaving reasoning with action and observation
+grounds it \cite{yao2023react}; our focused loop is of this kind, with the additional property that the
+observation, through \eqref{eq:inner_update}, rather than the next token, determines where the reasoning goes.
+The wandering voice is closer to plain chain-of-thought in its isolation from perception, but divergent rather
+than convergent, interruptible, and persistent in its products.
+
+\begin{table}[ht]
+    \centering
+    \small
+    \begin{tabular}{|>{\raggedright\arraybackslash}p{0.19\linewidth}|>{\raggedright\arraybackslash}p{0.22\linewidth}|>{\raggedright\arraybackslash}p{0.24\linewidth}|>{\raggedright\arraybackslash}p{0.24\linewidth}|}
+        \hline
+                                & \textbf{Chain-of-thought} & \textbf{Focused voice} & \textbf{Wandering voice} \\ \hline
+        Goal                    & answer a given question   & resolve a given surprise & none given; seed by salience \\ \hline
+        Dynamics                & convergent                & convergent             & divergent, associative \\ \hline
+        Contact with the world  & none                      & thought--action--observation & none (imagination only) \\ \hline
+        Persistence             & discarded                 & question objects, beliefs, lessons & imagined store, hypotheses \\ \hline
+        Interruptible           & no                        & yes                    & yes, resumable \\ \hline
+        Latency budget          & n/a                       & $\sim$1\,s, no extended thinking & unbounded, extended thinking \\ \hline
+    \end{tabular}
+    \caption{Chain-of-thought compared with the two modes of the proposed inner voice.}
+    \label{tab:inner_cot}
+\end{table}
+
+Two practical consequences follow. First, \emph{think when there is time, not when there is pressure}. In the
+deployed language agent extended thinking is disabled, because a thinking-mode model spent 3\,000--6\,000 tokens
+(40--80\,s) before each tool call; that is incompatible with the focused mode but costs nothing in the wandering
+mode, where it can be enabled with a large budget and pre-empted at any moment. Slow reasoning is done in advance
+and fast reasoning uses its results. Second, chain-of-thought traces are known not always to reflect the
+computation that produced the answer \cite{turpin2023language}, as human verbal reports do not always reflect the
+causes of behaviour \cite{nisbett1977telling}. The faithful record of the robot's reasoning is therefore the
+structured one --- hypotheses, predictions, observations and posterior updates --- not the text. Finally, wandering
+chains whose hypotheses were later confirmed by perception form a corpus of reasoning verified against the world,
+which could be used to fine-tune the local model in the manner of self-taught reasoning \cite{zelikman2022star},
+with perception, rather than a known answer, as the filter.
+
+\subsection{Consequences for belief and learning}
+\label{sec:inner_speech:learning}
+
+The loop changes how beliefs evolve in two ways. Within an episode, uncertainty is reduced where surprise
+occurred rather than where the sensors happened to point, which is efficient but leaves the rest of the map less
+examined and makes the robot's own data a biased sample; a decaying novelty term \cite{schwartenbeck2019curiosity}
+and importance weighting of learned statistics are required to correct this. Across episodes, every closed
+question is a labelled example, and learning proceeds at four timescales (Table~\ref{tab:inner_learning}).
+
+\begin{table}[ht]
+    \centering
+    \small
+    \begin{tabular}{|>{\raggedright\arraybackslash}p{0.14\linewidth}|>{\raggedright\arraybackslash}p{0.37\linewidth}|>{\raggedright\arraybackslash}p{0.37\linewidth}|}
+        \hline
+        \textbf{Timescale} & \textbf{What changes} & \textbf{Where, in this architecture} \\ \hline
+        Seconds   & posterior over the hypotheses of one question         & the question object \eqref{eq:inner_question} \\ \hline
+        Days      & priors: where objects are, which doors are shut, what moves & long-term object and topological memory, as Dirichlet counts \\ \hline
+        Weeks     & likelihoods: detector and concept models              & false negatives and positives labelled by resolved questions \\ \hline
+        Slow      & structure: new categories                             & recurrent, mutually similar ``unknown'' resolutions named by the voice and proposed as a new concept \\ \hline
+    \end{tabular}
+    \caption{Learning driven by the inner-question loop.}
+    \label{tab:inner_learning}
+\end{table}
+
+The last row is where the hypothesis of a language for thought is most directly engaged: a cluster of anomalies
+that resists every existing concept becomes learnable once it is named. The loop also learns about itself: the
+salience weights $\pi_k$ in \eqref{eq:inner_demand} are adjusted by the information each trigger actually yielded,
+asking a person is weighed against looking, and loops that repeatedly resolve the same way are compiled into
+reflexive rules, so that the number of language-model calls per hour should \emph{decrease} as competence grows.
+
+\subsection{Mapping onto the existing architecture}
+\label{sec:inner_speech:mapping}
+
+Several components already exist in the language agent. Robot events (mission reports, failures, completions)
+already wake the model through a queue, in turns restricted to perceiving, querying memory, stopping and
+proposing, never acting. Every action already passes a deterministic gate. The decision to ask or to assume is
+already decision-theoretic. Unexplained occupancy is already isolated by a residual agent that acts as the null
+hypothesis of the scene, and episodic and long-term object memories are already joined read-only. Missing are the
+persistent question objects \eqref{eq:inner_question}, a prediction evaluator implementing
+\eqref{eq:inner_update} outside the language model, the demand signal and mode arbitration
+\eqref{eq:inner_demand}--\eqref{eq:inner_modes}, the imagined store with its provenance, and the channel through
+which bounded spatial priors reach the concept agents.
+
+\subsection{Testable predictions}
+\label{sec:inner_speech:predictions}
+
+Consistent with the evaluation principle adopted throughout --- policies compared against each other inside one
+closed loop, with body, sensors and environment fixed --- the proposal makes five falsifiable predictions, each
+tested in simulation by moving known objects and introducing unfamiliar ones:
+\begin{enumerate}[label=\textbf{P\arabic*}]
+    \item The unexplained residual mass per room decreases faster with the focused loop than without it.
+    \item The proposer's calibration on resolved questions improves, and $\beta_x$ in \eqref{eq:inner_prior}
+    decreases, as the robot's own counts accumulate.
+    \item Detector false-negative rates fall after retraining on question-labelled examples.
+    \item Inner questions per hour decrease over repeated exposure to the same environment while answer accuracy
+    is maintained.
+    \item Plans prepared while wandering reduce the latency from surprise to a validated response, and the time to
+    notice a deliberately moved object does not grow despite habituation.
+\end{enumerate}
+A failure of P1 would indicate that the epistemic value of language-mediated questions does not exceed that of
+the existing exploration; a failure of P4 would indicate that the loop does not transfer competence to the
+automatic layer, which is its principal claim.
+
+\subsection{Limitations}
+\label{sec:inner_speech:limitations}
+
+The demand signal \eqref{eq:inner_demand} sums heterogeneous prediction errors whose precisions must themselves be
+calibrated, and a poorly scaled term will either suppress the voice or keep it permanently engaged. A single
+language model serves the person, the focused loop and the wandering loop; pre-emption keeps the person first but
+bounds how much offline reasoning a busy robot can do. The tempered prior \eqref{eq:inner_prior} is a heuristic
+combination rather than a derived posterior. Finally, the analogy with human inner speech is functional, not
+mechanistic: the proposal is that the same computational role --- serial, compositional self-questioning in the
+service of epistemic value --- is useful for a robot, not that the robot's voice resembles the human one in any
+further respect.
