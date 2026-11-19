@@ -1,21 +1,23 @@
 % =====================================================================================================
-% language_hierarchy_section.tex — Language over the belief hierarchy: culture, sequencing and imagination
+% vygotskian_cultural_plane.tex — The Vygotskian machine, part 3: the cultural plane
+%                                  (language over the belief hierarchy: culture, sequencing and imagination)
 %
-% DRAFT (2026-11-19). A proposal section: the architecture it describes is NOT yet implemented beyond the parts
-% stated as existing. Source design note: docs/LANGUAGE_OVER_BELIEF_HIERARCHY.md.
-% Include AFTER inner_speech_section.tex (it refers to that section's equations and modes):
-%     \input{inner_speech_section}
-%     \input{language_hierarchy_section}
-% Bibliography: inner_speech.bib (shared). Packages: amsmath, amssymb, enumitem, array (as for the inner-speech
-% section). friston2017deeptemporal duplicates main.tex's friston2017deep under a new key on purpose, so that this
-% file builds with inner_speech.bib alone; merge the two keys when the bibliographies are merged.
+% DRAFT (2026-11-19; first drafted as language_hierarchy_section.tex). A proposal section: the architecture it
+% describes is NOT yet implemented beyond the parts stated as existing. Source design note:
+% docs/LANGUAGE_OVER_BELIEF_HIERARCHY.md.
+% Include AFTER vygotskian_machine.tex and vygotskian_internalisation.tex (it refers to their equations and modes).
+% Bibliography: vygotskian_machine.bib (shared). Packages: amsmath, amssymb, enumitem, array.
+% friston2017deeptemporal duplicates main.tex's friston2017deep under a new key on purpose, so that this file builds
+% with vygotskian_machine.bib alone; merge the two keys when the bibliographies are merged.
+% Labels keep their original sec:lang_hierarchy:* prefix so that existing cross-references do not break.
 % =====================================================================================================
 
-\section{Language over the Belief Hierarchy}
+\section{The Cultural Plane: Language over the Belief Hierarchy}
 \label{sec:lang_hierarchy}
 
 Section~\ref{sec:inner_speech} treated the language model as an inner voice and asked what language contributes to
-thought. Here we take the complementary, externalist view. The vision-language model (VLM) arrives with a large share
+thought. Here we turn to the plane on which, in Vygotsky's account, every higher function appears first: the social
+and cultural one (Section~\ref{sec:vygotskian}). The vision-language model (VLM) arrives with a large share
 of human common sense already in it; for the robot it is \emph{culture}, an external store of knowledge that extends
 its mind in the sense of \cite{clark1998extended} and that it inherits rather than acquires
 (Section~\ref{sec:inner_speech:why_lm}). The question is how to couple such a store to a belief state that is built
@@ -87,6 +89,18 @@ its predictions concern the present scene, not the outcome of what the robot is 
 The three roles share one asymmetry, already argued in Section~\ref{sec:inner_speech:why_lm}: inference evaluates
 hypotheses and policies well but cannot generate new ones, while a language model generates them cheaply but cannot
 evaluate them. Each role pairs the two in a generate-and-test loop whose test is part of the robot's generative model.
+
+\paragraph{The person is part of the scaffold.}
+In Vygotsky's account the knowledge that is internalised comes from a more knowledgeable other, and the support it
+gives --- scaffolding \cite{wood1976role} --- is withdrawn as the learner's competence grows. The VLM is one such
+other: culture, available on demand. The person living with the robot is the other one, and in the deployed system
+already plays the role: they set goals, answer the questions the robot cannot settle by looking, confirm a claim
+before it is stored, and approve a mission before it starts. In the cultural plane their answers are the most
+valuable evidence the robot receives. A room function confirmed by the person contributes to the counts $n_f$ in
+\eqref{eq:lh_beta_prior}; a plan they approved and that succeeded contributes to the habit term $E$ in
+\eqref{eq:lh_habit}; and the decision to ask them rather than look is itself costed, as the language agent already
+does for objects that may have moved. Both scaffolds are designed to be withdrawn: the VLM's weight falls as
+$\kappa\beta_f$ is overtaken by experience, and the person is asked less as the robot's counts grow.
 
 \subsection{Culture: a level-3 function hypothesis}
 \label{sec:lang_hierarchy:culture}

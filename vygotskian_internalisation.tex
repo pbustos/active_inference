@@ -1,45 +1,50 @@
 % =====================================================================================================
-% inner_speech_section.tex — Inner speech, mind-wandering and active inference
+% vygotskian_internalisation.tex — The Vygotskian machine, part 2: internalisation (the inner voice)
 %
-% DRAFT (2026-11-18). A proposal section: it describes an architecture that is NOT yet implemented,
-% grounded in the existing language_agent (robocomp/active_inference). Include from main.tex with
-%     \input{inner_speech_section}
-% and add inner_speech.bib as a second resource:  \addbibresource{inner_speech.bib}
-% All keys are new (none collides with the keys main.tex already cites).
+% DRAFT (2026-11-19; first drafted 2026-11-18 as inner_speech_section.tex). A proposal section: it describes an
+% architecture that is NOT yet implemented, grounded in the existing language_agent (robocomp/active_inference).
+% Include from main.tex, in this order:
+%     \input{vygotskian_machine}
+%     \input{vygotskian_internalisation}
+%     \input{vygotskian_cultural_plane}
+% and add the shared bibliography:  \addbibresource{vygotskian_machine.bib}
 % Packages used: amsmath, amssymb, enumitem (already loaded by main.tex) and array, which main.tex does not
 % load yet: add \usepackage{array} to its preamble.
+% Labels keep their original sec:inner_speech:* prefix so that existing cross-references do not break.
 % =====================================================================================================
 
-\section{Inner Speech as Epistemic Action}
+\section{Internalisation: the Inner Voice}
 \label{sec:inner_speech}
 
 The robot described so far uses language in one direction only: a person speaks, and a language agent turns
 the request into commands for the controller, grounded in a textual digest of the belief graph. This section
-proposes to turn that capability inward. We argue that a language model embedded in an Active Inference
+proposes to turn that capability inward --- the internalisation step of the Vygotskian machine
+(Section~\ref{sec:vygotskian}). We argue that a language model embedded in an Active Inference
 architecture can play the role that inner speech plays in human cognition: a serial, compositional medium in
 which the agent poses questions to itself, generates hypotheses, rehearses plans and replays its past, and that
 this role follows naturally from the epistemic component of expected free energy. The proposal is stated
 together with the constraints that keep such a voice from becoming a source of confabulated belief, and with the
 experiments that would falsify it.
 
-\subsection{Motivation: language for thought before language for talk}
+\subsection{Motivation: from talk to thought}
 \label{sec:inner_speech:motivation}
 
-Two traditions disagree on the origin of inner speech but agree on its function. On the internalist view,
-human language evolved first as an internal system for structuring thought, and its use for communication is a
-later externalisation \cite{berwick2016why}. On the developmental view, inner speech is social speech that the
-child gradually internalises, abbreviates and turns into a tool for self-regulation \cite{vygotsky1986thought}.
-Contemporary reviews treat inner speech as functionally involved in planning, problem solving, self-monitoring and
-the maintenance of goals in working memory \cite{aldersonday2015inner}, and language more generally as a
-cognitive technology that lets a learner manipulate discrete, recombinable tokens rather than raw percepts
-\cite{clark1998magic}.
+Two traditions disagree on the origin of inner speech but agree on its function. On the developmental view that
+gives the machine its name, inner speech is social speech that the child gradually internalises, abbreviates and
+turns into a tool for self-regulation \cite{vygotsky1986thought}. On the internalist view, which we use as the
+contrast throughout, human language evolved first as an internal system for structuring thought, and its use for
+communication is a later externalisation \cite{berwick2016why}. Contemporary reviews treat inner speech as
+functionally involved in planning, problem solving, self-monitoring and the maintenance of goals in working memory
+\cite{aldersonday2015inner}, and language more generally as a cognitive technology that lets a learner manipulate
+discrete, recombinable tokens rather than raw percepts \cite{clark1998magic}.
 
 Large language models give a striking instance of the developmental route. They are trained exclusively on
 communicative text, yet producing intermediate reasoning in that same medium before answering --- chain-of-thought
 --- measurably improves their performance \cite{wei2022chain}. A system built for talk becomes better at thinking
 by talking to itself. Our language agent sits at the same point of its own development: it was built to converse
 with a person, and the question we ask is what it contributes once its speech is addressed to the robot itself.
-Section~\ref{sec:inner_speech:why_lm} returns to what this origin implies for the internalist view.
+Section~\ref{sec:inner_speech:why_lm} returns to the internalist contrast, and Section~\ref{sec:inner_speech:library}
+turns it into a control experiment.
 
 \subsection{Inner questions as epistemic actions}
 \label{sec:inner_speech:questions}
@@ -316,10 +321,12 @@ question into an experiment: a compositional generator over the robot's own conc
 only on the robot's experience, would supply the format without the culture. Section~\ref{sec:inner_speech:library}
 describes such a generator.
 
-\subsection{Format without culture: a library-learning inner language}
+\subsection{Format without culture: the non-Vygotskian control}
 \label{sec:inner_speech:library}
 
-Library learning in program induction offers a concrete candidate. DreamCoder \cite{ellis2021dreamcoder} learns to
+A Vygotskian machine is claimed to need culture, not just a language-like format. The claim is testable only against
+a machine that has the format without the culture. Library learning in program induction offers a concrete
+candidate. DreamCoder \cite{ellis2021dreamcoder} learns to
 solve tasks by writing programs and, at the same time, learns the language in which it writes them. It maintains a
 library $\mathcal{L}$, initially a small base language of typed primitives, and a prior $P(\rho \mid \mathcal{L})$
 over programs $\rho$ given by a probabilistic grammar over that library, under which a program that reuses library
@@ -412,7 +419,7 @@ which bounded spatial priors reach the concept agents.
 \label{sec:inner_speech:predictions}
 
 Consistent with the evaluation principle adopted throughout --- policies compared against each other inside one
-closed loop, with body, sensors and environment fixed --- the proposal makes seven falsifiable predictions, each
+closed loop, with body, sensors and environment fixed --- the proposal makes eight falsifiable predictions, each
 tested in simulation by moving known objects and introducing unfamiliar ones:
 \begin{enumerate}[label=\textbf{P\arabic*}]
     \item The unexplained residual mass per room decreases faster with the focused loop than without it.
@@ -426,7 +433,7 @@ tested in simulation by moving known objects and introducing unfamiliar ones:
     \item With the language-model proposer replaced by a fixed hypothesis set (the existing concept classes and
     ``unknown'') and template-based missions, the loop resolves fewer questions about objects and failures outside
     the built-in models, and acquires new categories more slowly.
-    \item A library-learning generator trained only on the robot's own experience
+    \item \emph{The non-Vygotskian control.} A library-learning generator trained only on the robot's own experience
     (Section~\ref{sec:inner_speech:library}), with no language model in the loop, supplies the format without the
     culture. Two parts:
     \begin{enumerate}[label=(\alph*)]
@@ -438,14 +445,21 @@ tested in simulation by moving known objects and introducing unfamiliar ones:
         for instance) is recovered as a library program whose likelihood on held-out instances exceeds that of the
         ``unknown'' model, and whose adoption as a concept prior reduces the unexplained residual mass.
     \end{enumerate}
+    \item \emph{Private speech.} The rate of language-model calls behaves as children's private speech does
+    \cite{berk1992children}: within an environment it rises when tasks are made harder or novel (doors shut that are
+    usually open, unfamiliar objects introduced) and falls with repeated exposure to the same tasks, while task
+    success is maintained.
 \end{enumerate}
 A failure of P1 would indicate that the epistemic value of language-mediated questions does not exceed that of
 the existing exploration; a failure of P4 would indicate that the loop does not transfer competence to the
 automatic layer, which is its principal claim; and a failure of P6 would indicate that the language model adds
-nothing a fixed hypothesis set does not, which would remove the case for including it. P7 separates the
-contribution of language as a format for thought from that of the knowledge it carries: success of P7(b) would show
-that a compositional inner language grounded only in perception can form a new concept before any word for it
-exists.
+nothing a fixed hypothesis set does not, which would remove the case for including it. P7 is the control for the
+machine's central claim: it separates the contribution of language as a format for thought from that of the
+culture it carries. If the culture-free generator matches the culture-fed one on situations far from the robot's
+experience, the machine need not be Vygotskian; if it falls behind there, culture is doing work that format alone
+cannot. Success of P7(b) would in addition show that a compositional inner language grounded only in perception can
+form a new concept before any word for it exists. P8 tests the dynamics the name promises: language recruited by
+difficulty and withdrawn by mastery.
 
 \subsection{Limitations}
 \label{sec:inner_speech:limitations}

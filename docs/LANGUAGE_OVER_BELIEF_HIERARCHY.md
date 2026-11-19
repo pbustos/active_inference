@@ -1,11 +1,16 @@
-# Language over the belief hierarchy — culture, sequencing and imagination
+# The Vygotskian machine — language over the belief hierarchy (culture, sequencing and imagination)
+
+*The Vygotskian machine*: a robot whose higher functions arrive from outside — from the person and from the VLM's
+culture — and are internalised into an inner voice, then into priors, counts and habits that need no language.
+This note is its engineering design; the paper sections are `vygotskian_machine.tex` (framing),
+`vygotskian_internalisation.tex` and `vygotskian_cultural_plane.tex`, at the root of `pbustos/active_inference`.
 
 Status: **DESIGN** (2026-11-19). Nothing built. Written for `robocomp/active_inference`, to sit next to
 `ring_metaconcept/SCHEMA_GENERALITY_TODO.md`; drafted on `pbustos/active_inference` because that is the
 repository this session can write. Companions: `CONCEPT_AGENT_RECIPE.md` §6 (the metaconcept chassis),
 `kitchen_metaconcept/etc/config.toml` (authored class priors), `controller/src/exploration_drive.h` (the automatic
 explorer), `language_agent/` (the VLM, its mission planner and its `imagine*` tools), `language_agent/docs/
-execution_contracts.md`, and the paper draft `inner_speech_section.tex` (Eqs. 5–7).
+execution_contracts.md`, and the paper draft `vygotskian_internalisation.tex` (Eqs. 5–7).
 
 Paths are relative to `robocomp/active_inference` unless stated.
 

@@ -1,0 +1,96 @@
+% =====================================================================================================
+% vygotskian_machine.tex — The Vygotskian machine, part 1: the framing section
+%
+% DRAFT (2026-11-19). Opens the three-part proposal; a proposal, not a report of results.
+% Include from main.tex, in this order:
+%     \input{vygotskian_machine}
+%     \input{vygotskian_internalisation}
+%     \input{vygotskian_cultural_plane}
+% with \addbibresource{vygotskian_machine.bib} and \usepackage{array} in the preamble.
+% =====================================================================================================
+
+\section{The Vygotskian Machine}
+\label{sec:vygotskian}
+
+Vygotsky's account of how higher mental functions develop has one central law: every such function appears twice,
+first between people and then within the individual \cite{vygotsky1978mind}. A child plans aloud with an adult before
+planning aloud alone, plans aloud alone before planning silently, and plans silently before the plan runs without
+words. Language is the vehicle of that passage: the means by which knowledge held by others becomes the learner's
+own, and the tool with which the learner regulates its own action while the knowledge is still new.
+
+We propose to build a robot on that law and call it a \emph{Vygotskian machine}. Its higher functions --- goals,
+plans, the meaning of a scene, what to expect of a room --- arrive from outside: from the person who lives with it and
+from a vision-language model that carries a large share of human culture. They are then internalised: first as an
+inner voice that questions, plans and imagines (Section~\ref{sec:inner_speech}), and eventually as priors, counts
+and habits that need no language at all. The robot's automatic level --- the Active Inference agents that build its
+belief hierarchy and drive it --- is what the internalised knowledge ends up shaping, and what language is recruited
+to help whenever that level is out of its depth.
+
+\begin{table}[ht]
+    \centering
+    \small
+    \begin{tabular}{|>{\raggedright\arraybackslash}p{0.4\linewidth}|>{\raggedright\arraybackslash}p{0.5\linewidth}|}
+        \hline
+        \textbf{Vygotsky} & \textbf{The machine} \\ \hline
+        Every higher function appears twice: first between people, then within the individual
+            & goals, plans and scene meaning arrive as a person's words and the VLM's culture, then become priors,
+              plans and habits (Sections~\ref{sec:lang_hierarchy:culture}--\ref{sec:lang_hierarchy:sequencing}) \\ \hline
+        Outer speech $\to$ private speech $\to$ inner speech $\to$ no speech
+            & the VLM writes a mission; the inner voice rehearses and monitors it; the compiled habit runs without
+              language (Eq.~\ref{eq:lh_habit}) \\ \hline
+        Private speech rises with task difficulty and fades with mastery \cite{berk1992children}
+            & the demand signal recruits the voice on surprise and leaves it idle when the automatic level copes
+              (Section~\ref{sec:inner_speech:modes}) \\ \hline
+        Scaffolding by a more knowledgeable other, withdrawn as competence grows \cite{wood1976role}
+            & the VLM's prior weight is overtaken by the robot's own counts (Eq.~\ref{eq:lh_beta_prior}); the person
+              is asked less as experience accumulates \\ \hline
+        The zone of proximal development: what the learner can do only with help
+            & situations outside the automatic level's competence but within reach with the VLM or the person;
+              learning moves them inside \\ \hline
+        Mediation by signs: language as a psychological tool
+            & the VLM's output is never accepted as belief; it structures what the robot's own models do --- it
+              proposes, sequences and chooses what to imagine (Table~\ref{tab:lh_roles}) \\ \hline
+    \end{tabular}
+    \caption{Vygotsky's account and its counterpart in the proposed machine.}
+    \label{tab:vygotskian_mapping}
+\end{table}
+
+\paragraph{Internalisation in Active Inference.}
+The passage from outer to inner has a precise reading in the framework of this document. Culture enters the
+generative model in two places: as prior beliefs and preferences --- what a room is for, which objects go together,
+what outcomes are acceptable --- and as candidate policies scored by expected free energy. Experience then
+internalises it in two corresponding places: the priors are progressively replaced by the robot's own counts, and
+the candidate policies that keep succeeding settle into the habit prior over policies. The machine's dependence on
+language for routine matters should therefore fall with experience, and remain for what is novel, social or
+structural.
+
+\paragraph{Organisation.}
+Section~\ref{sec:inner_speech} develops internalisation: the inner voice as epistemic action, the attention modes
+that recruit it and release it, and the learning it drives. Section~\ref{sec:lang_hierarchy} develops the cultural
+plane: how the VLM is bound to the belief hierarchy in three roles --- culture, sequencing and imagination --- under
+the rule that the language model proposes and the generative models dispose.
+
+\paragraph{The internalist contrast.}
+The opposing view holds that language evolved first as an internal system for thought and was only later used to
+communicate \cite{berwick2016why}. We use it as a contrast rather than a rival: the distinction it draws between the
+faculty of language and the content language carries (Section~\ref{sec:inner_speech:why_lm}) is what makes the
+Vygotskian claim testable. A machine with a compositional inner language but no culture --- built by library
+learning from the robot's own experience alone (Section~\ref{sec:inner_speech:library}) --- is the
+\emph{non-Vygotskian control}. If it matches the culture-fed machine on situations far from what the robot has seen,
+the culture is not doing the work the name claims.
+
+\paragraph{Prior uses of the idea.}
+Mirolli and Parisi argued for a Vygotskian cognitive robotics in which language serves as a cognitive tool as well as
+a means of communication \cite{mirolli2011towards}, and Colas et al.\ proposed Vygotskian autotelic agents that
+internalise language and culture to imagine and pursue their own goals \cite{colas2022language}. The present proposal
+shares their premise and differs in three respects: internalisation is formalised inside Active Inference, as culture
+entering priors and policies and settling into counts and habits; the internalised knowledge acts on a probabilistic
+belief hierarchy whose evidence rules and cavity messages keep it from confirming itself; and an attention mechanism
+decides, moment to moment, whether language is needed at all.
+
+\paragraph{What would show the name is earned.}
+Three predictions carry the claim. The non-Vygotskian control falls behind the culture-fed machine in proportion to
+the novelty of a situation (P7 in Section~\ref{sec:inner_speech:predictions}). Language use behaves as private speech
+does, rising with difficulty and falling with mastery (P8). And the scaffold is withdrawn: as confirmed rooms and
+successful missions accumulate, the VLM's calls fall while task success holds (L6 in
+Section~\ref{sec:lang_hierarchy:predictions}).
