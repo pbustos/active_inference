@@ -39,6 +39,7 @@ communicative text, yet producing intermediate reasoning in that same medium bef
 --- measurably improves their performance \cite{wei2022chain}. A system built for talk becomes better at thinking
 by talking to itself. Our language agent sits at the same point of its own development: it was built to converse
 with a person, and the question we ask is what it contributes once its speech is addressed to the robot itself.
+Section~\ref{sec:inner_speech:why_lm} returns to what this origin implies for the internalist view.
 
 \subsection{Inner questions as epistemic actions}
 \label{sec:inner_speech:questions}
@@ -259,6 +260,62 @@ salience weights $\pi_k$ in \eqref{eq:inner_demand} are adjusted by the informat
 asking a person is weighed against looking, and loops that repeatedly resolve the same way are compiled into
 reflexive rules, so that the number of language-model calls per hour should \emph{decrease} as competence grows.
 
+\subsection{Why a language model: generation versus evaluation}
+\label{sec:inner_speech:why_lm}
+
+None of the above requires a person, so the question arises of what a language model contributes to an
+architecture that already performs inference and action selection. Our answer is a division of labour. Expected
+free energy evaluates policies and Bayesian updating weighs hypotheses, but both operate over a space that has
+already been enumerated: each concept agent carries a fixed generative model, policies must be listed before they
+can be scored, and Bayesian model reduction can prune structure but not invent it \cite{friston2017curiosity}.
+Whatever falls outside the given models remains an unexplained residual. A language model is weak where this
+machinery is strong --- its confidences are not calibrated posteriors and it has no access to the sensors --- and
+strong where it is weak: it is a cheap, broad generator of hypotheses, explanations and plans. We therefore use it
+only as a \emph{proposal distribution}, in a generate-and-test loop whose test is active inference:
+\begin{itemize}
+    \item \emph{Hypotheses outside the built-in models.} A residual blob can be proposed to be a bag, a toppled
+    chair or a robot vacuum, none of which any concept agent represents; the question loop then tests them.
+    \item \emph{Amortised policy search.} Instead of enumerating multi-step policies, the model writes a few
+    candidate missions --- small programs in the mission language --- which the gate validates and expected free
+    energy scores.
+    \item \emph{Relational binding across agents.} The agents' representations (signed distance fields, occupancy
+    grids, existence log-odds, episodic records) are mutually incompatible; a sentence such as ``the chair that was
+    not next to the table in the room behind door~3 yesterday'' binds them in one query no single agent could pose.
+    \item \emph{Explanation from few examples.} After a single surprise the model can propose which variable
+    mattered (``the door is shut because it is evening''), turning one episode into a testable generalisation.
+    \item \emph{Abstraction and naming.} Episodes are compressed into reusable lessons, and recurrent unknowns are
+    named, which is what makes them candidates for a new concept (Table~\ref{tab:inner_learning}).
+\end{itemize}
+Language, rather than an arbitrary learned embedding, matters for three reasons: it is discrete and compositional,
+so new hypotheses and plans are assembled from known parts; it is inspectable, so that deterministic gates can parse
+and check it and people can audit it; and, once the robot thinks in it, communication with a person comes at no
+further cost.
+
+\paragraph{Where the knowledge comes from.}
+This raises a difficulty for the motivating thesis. If the inner voice precedes the outer one, the common-sense
+knowledge on which the proposer's value rests cannot have arrived through communication --- yet a language model
+acquires all of it from human text, that is, from other people's outer voices. The difficulty dissolves once the
+\emph{faculty} is distinguished from its \emph{content}. The internalist claim concerns the former: a
+computational system for building unbounded hierarchical structures, available for thought before it is used for
+talk \cite{hauser2002faculty, berwick2016why}. It makes no claim that what a person knows was acquired without
+language. Human knowledge has three sources: core systems for objects, agents, number and space, present before
+learning \cite{spelke2007core}; individual experience; and, once outer language exists, cumulative cultural
+transmission, which supplies most of what an adult knows \cite{tomasello1999cultural}. Even on the internalist
+view, the inner voice of a modern human is filled largely by the outer voices of others.
+
+The architecture has the same three sources, in a different arrangement. The concept agents' hand-built generative
+models play the role of \emph{core knowledge}: given before experience and limited to a few domains. The robot's
+own counts $n_x(h)$ in \eqref{eq:inner_prior} are \emph{individual experience}. The language model is
+\emph{culture}: knowledge distilled from a community's communication and inherited, for this individual, at birth.
+The robot thus resembles a child born into a culture more than an early hominin, and its inner voice is Vygotskian
+in origin: its format and its content were both learned from outer speech. Two consequences follow. First, the
+proposal does not demonstrate the internalist thesis and should not be read as doing so; its claim is functional
+--- an inner use of language has epistemic value independently of communication --- and holds whatever the origin of
+the language system. Second, the format and the content of the voice can in principle be separated, which turns the
+question into an experiment (P7 in Section~\ref{sec:inner_speech:predictions}): a compositional generator over the
+robot's own concepts and mission language, trained only on the robot's experience, in the manner of library
+learning in program induction \cite{ellis2021dreamcoder}, would supply the format without the culture.
+
 \subsection{Mapping onto the existing architecture}
 \label{sec:inner_speech:mapping}
 
@@ -276,7 +333,7 @@ which bounded spatial priors reach the concept agents.
 \label{sec:inner_speech:predictions}
 
 Consistent with the evaluation principle adopted throughout --- policies compared against each other inside one
-closed loop, with body, sensors and environment fixed --- the proposal makes five falsifiable predictions, each
+closed loop, with body, sensors and environment fixed --- the proposal makes seven falsifiable predictions, each
 tested in simulation by moving known objects and introducing unfamiliar ones:
 \begin{enumerate}[label=\textbf{P\arabic*}]
     \item The unexplained residual mass per room decreases faster with the focused loop than without it.
@@ -287,10 +344,18 @@ tested in simulation by moving known objects and introducing unfamiliar ones:
     is maintained.
     \item Plans prepared while wandering reduce the latency from surprise to a validated response, and the time to
     notice a deliberately moved object does not grow despite habituation.
+    \item With the language-model proposer replaced by a fixed hypothesis set (the existing concept classes and
+    ``unknown'') and template-based missions, the loop resolves fewer questions about objects and failures outside
+    the built-in models, and acquires new categories more slowly.
+    \item A compositional generator trained only on the robot's own experience (format without culture) recovers
+    part of the advantage in P6 within a familiar environment, and less of it the further a situation departs from
+    what the robot has seen.
 \end{enumerate}
 A failure of P1 would indicate that the epistemic value of language-mediated questions does not exceed that of
 the existing exploration; a failure of P4 would indicate that the loop does not transfer competence to the
-automatic layer, which is its principal claim.
+automatic layer, which is its principal claim; and a failure of P6 would indicate that the language model adds
+nothing a fixed hypothesis set does not, which would remove the case for including it. P7 separates the
+contribution of language as a format for thought from that of the knowledge it carries.
 
 \subsection{Limitations}
 \label{sec:inner_speech:limitations}
@@ -299,7 +364,9 @@ The demand signal \eqref{eq:inner_demand} sums heterogeneous prediction errors w
 calibrated, and a poorly scaled term will either suppress the voice or keep it permanently engaged. A single
 language model serves the person, the focused loop and the wandering loop; pre-emption keeps the person first but
 bounds how much offline reasoning a busy robot can do. The tempered prior \eqref{eq:inner_prior} is a heuristic
-combination rather than a derived posterior. Finally, the analogy with human inner speech is functional, not
+combination rather than a derived posterior. The generator of P7 is substantially harder to build than the
+ablation of P6, and may have to be approximated by a small model trained on the robot's logs and mission corpus,
+whose pre-training would leak some culture back in. Finally, the analogy with human inner speech is functional, not
 mechanistic: the proposal is that the same computational role --- serial, compositional self-questioning in the
 service of epistemic value --- is useful for a robot, not that the robot's voice resembles the human one in any
 further respect.
