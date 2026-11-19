@@ -312,9 +312,88 @@ in origin: its format and its content were both learned from outer speech. Two c
 proposal does not demonstrate the internalist thesis and should not be read as doing so; its claim is functional
 --- an inner use of language has epistemic value independently of communication --- and holds whatever the origin of
 the language system. Second, the format and the content of the voice can in principle be separated, which turns the
-question into an experiment (P7 in Section~\ref{sec:inner_speech:predictions}): a compositional generator over the
-robot's own concepts and mission language, trained only on the robot's experience, in the manner of library
-learning in program induction \cite{ellis2021dreamcoder}, would supply the format without the culture.
+question into an experiment: a compositional generator over the robot's own concepts and mission language, trained
+only on the robot's experience, would supply the format without the culture. Section~\ref{sec:inner_speech:library}
+describes such a generator.
+
+\subsection{Format without culture: a library-learning inner language}
+\label{sec:inner_speech:library}
+
+Library learning in program induction offers a concrete candidate. DreamCoder \cite{ellis2021dreamcoder} learns to
+solve tasks by writing programs and, at the same time, learns the language in which it writes them. It maintains a
+library $\mathcal{L}$, initially a small base language of typed primitives, and a prior $P(\rho \mid \mathcal{L})$
+over programs $\rho$ given by a probabilistic grammar over that library, under which a program that reuses library
+functions is short and therefore probable. Each task $x$ supplies a likelihood $P(x \mid \rho)$, in the original
+work usually the indicator that $\rho$ solves $x$. The system seeks the library and the sets of solutions
+$\mathcal{F}_x$ that jointly maximise
+\begin{equation}
+    P(\mathcal{L}) \prod_{x \in \mathcal{X}} \sum_{\rho \in \mathcal{F}_x} P(x \mid \rho)\, P(\rho \mid \mathcal{L}),
+    \label{eq:dc_objective}
+\end{equation}
+together with a recognition model $Q(\rho \mid x)$, a neural network that predicts from a task which parts of the
+library its solution is likely to use. Optimisation alternates three phases:
+\begin{enumerate}
+    \item \textbf{Wake.} For each task, programs are enumerated in decreasing probability under $Q$, within a time
+    budget, and the best few that solve it are kept in $\mathcal{F}_x$.
+    \item \textbf{Abstraction sleep.} The solutions found so far are refactored to expose shared sub-programs, and
+    those whose addition to $\mathcal{L}$ most shortens the library plus the rewritten solutions --- a minimum
+    description length criterion --- become new library functions. Refactoring by inverse $\beta$-reduction over
+    version spaces finds abstractions that appear in no program literally.
+    \item \textbf{Dream sleep.} $Q$ is trained to minimise $-\log Q(\rho \mid x)$ on two sources: \emph{replays}, the
+    tasks solved in wake paired with their solutions, and \emph{fantasies}, programs sampled from the current
+    library and executed to produce synthetic tasks, as in the Helmholtz machine \cite{dayan1995helmholtz}.
+\end{enumerate}
+The phases bootstrap one another: a richer library makes complex solutions short, short solutions are found
+sooner, more solved tasks give more material to compress, and a better recognition model makes search faster.
+Concepts such as higher-order list functions or parametrised drawing routines appear in the library without being
+defined. Later work makes abstraction learning substantially faster \cite{bowers2023stitch} and uses a language
+model to guide search and to name the learned abstractions \cite{grand2024lilo} --- which reintroduces precisely the
+culture that the present experiment excludes.
+
+\paragraph{Relation to the inner voice and to free energy.}
+The negative logarithm of \eqref{eq:dc_objective} is a description length: the complexity of the library and the
+programs plus the inaccuracy of the programs on the tasks. Its minimisation is therefore a form of free-energy
+minimisation over structure, and abstraction sleep is the constructive counterpart of the Bayesian model reduction
+that Active Inference assigns to sleep \cite{friston2017curiosity}: reduction prunes structure that does not pay for
+itself, abstraction adds structure that does. The three phases also map onto the modes of
+Section~\ref{sec:inner_speech:modes}. Wake is the focused voice solving questions and carrying out missions;
+abstraction sleep is consolidation while wandering, which compresses repeated solutions into reusable lessons; and
+dream sleep is imagination while wandering, which trains the proposer on simulated outcomes. In this generator the
+recognition model occupies the place the language model occupies in Section~\ref{sec:inner_speech:why_lm}: a
+learned proposal distribution, but one trained only on what this robot has done and imagined.
+
+\paragraph{Two instantiations.}
+\begin{itemize}
+    \item \emph{Over the mission language, for policies.} The base language is the mission language's operations
+    (\texttt{cross}, \texttt{explore}, \texttt{approach}, \texttt{watch}, \texttt{if}, \texttt{repeat}) and its
+    predicates. Tasks are the goals the robot has been given or has set itself through inner questions, and the
+    likelihood is the probability that a mission achieves its goal, measured by the controller's outcome on the
+    real robot or, cheaply and repeatably, in simulation. Learned library entries are macro-missions --- ``look
+    behind door~$D$ and return'', ``approach $X$ from the side it was last seen from'' --- discovered by compressing
+    the robot's own successful missions instead of written by people.
+    \item \emph{Over shape primitives, for new concepts.} The concept agents already describe object classes as
+    compositions of primitives in signed distance fields; a table, for instance, is a smooth box top on four
+    cylindrical legs. Taking these primitives and their composition operators (smooth union, placement, repetition,
+    symmetry) as the base language, a recurrent cluster of residual observations that every concept agent leaves
+    unexplained becomes a task: find a program whose distance field explains the clusters' point clouds. The
+    likelihood is the concept agents' existing measurement model, a noise model on signed distance, and the
+    continuous parameters of each candidate program are fitted with the same optimisers the concept agents use.
+    Compression across clusters yields reusable parts and whole-object programs, and a program that recurs is a
+    candidate for a new concept agent. This is structure learning whose candidates come from perception rather than
+    from text.
+\end{itemize}
+
+\paragraph{What has to change.}
+Three departures from the original setting are needed. Likelihoods are graded and noisy rather than binary, which
+the objective \eqref{eq:dc_objective} admits directly but which makes enumeration less decisive. Real tasks are
+expensive, since a mission takes minutes and a cluster accumulates over days, so dream sleep in simulation carries
+more of the learning than it does in DreamCoder. And tasks are few, so the inner question loop doubles as a
+curriculum: surprises select the tasks on which the library is trained.
+
+The resulting library is a compositional language of thought whose vocabulary comes only from what the robot has
+perceived and done. Its abstractions are unnamed; naming them requires a language shared with others, and that is
+the point at which a language model, and with it culture, would enter --- to externalise concepts that already exist
+internally, in the order the internalist thesis proposes.
 
 \subsection{Mapping onto the existing architecture}
 \label{sec:inner_speech:mapping}
@@ -347,15 +426,26 @@ tested in simulation by moving known objects and introducing unfamiliar ones:
     \item With the language-model proposer replaced by a fixed hypothesis set (the existing concept classes and
     ``unknown'') and template-based missions, the loop resolves fewer questions about objects and failures outside
     the built-in models, and acquires new categories more slowly.
-    \item A compositional generator trained only on the robot's own experience (format without culture) recovers
-    part of the advantage in P6 within a familiar environment, and less of it the further a situation departs from
-    what the robot has seen.
+    \item A library-learning generator trained only on the robot's own experience
+    (Section~\ref{sec:inner_speech:library}), with no language model in the loop, supplies the format without the
+    culture. Two parts:
+    \begin{enumerate}[label=(\alph*)]
+        \item \emph{Policies.} Over the mission language, the mean description length of the robot's successful
+        missions decreases across wake--sleep cycles; the library-learning proposer approaches the language-model
+        proposer on recurring goal types in a familiar environment, and falls further behind it the further a goal
+        departs from those seen before.
+        \item \emph{Concepts.} An object class absent from every concept agent and introduced in simulation (boxes,
+        for instance) is recovered as a library program whose likelihood on held-out instances exceeds that of the
+        ``unknown'' model, and whose adoption as a concept prior reduces the unexplained residual mass.
+    \end{enumerate}
 \end{enumerate}
 A failure of P1 would indicate that the epistemic value of language-mediated questions does not exceed that of
 the existing exploration; a failure of P4 would indicate that the loop does not transfer competence to the
 automatic layer, which is its principal claim; and a failure of P6 would indicate that the language model adds
 nothing a fixed hypothesis set does not, which would remove the case for including it. P7 separates the
-contribution of language as a format for thought from that of the knowledge it carries.
+contribution of language as a format for thought from that of the knowledge it carries: success of P7(b) would show
+that a compositional inner language grounded only in perception can form a new concept before any word for it
+exists.
 
 \subsection{Limitations}
 \label{sec:inner_speech:limitations}
@@ -365,8 +455,12 @@ calibrated, and a poorly scaled term will either suppress the voice or keep it p
 language model serves the person, the focused loop and the wandering loop; pre-emption keeps the person first but
 bounds how much offline reasoning a busy robot can do. The tempered prior \eqref{eq:inner_prior} is a heuristic
 combination rather than a derived posterior. The generator of P7 is substantially harder to build than the
-ablation of P6, and may have to be approximated by a small model trained on the robot's logs and mission corpus,
-whose pre-training would leak some culture back in. Finally, the analogy with human inner speech is functional, not
+ablation of P6. Library learning is computationally expensive, and its search over program structure must here be
+interleaved with continuous fitting of shape parameters. Its base languages --- the mission operations and the shape
+primitives --- are designed by people, so it is free of the culture carried by text but not of the designers'
+knowledge, which plays the role of core knowledge. A cheaper approximation, a small pre-trained model fine-tuned on
+the robot's logs, would let culture back in through its pre-training. Finally, the analogy with human inner speech
+is functional, not
 mechanistic: the proposal is that the same computational role --- serial, compositional self-questioning in the
 service of epistemic value --- is useful for a robot, not that the robot's voice resembles the human one in any
 further respect.
